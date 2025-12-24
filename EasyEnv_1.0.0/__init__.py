@@ -12,7 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "Easy Env",
+    "name" : "EasyEnv",
     "author" : "Tim Chen", 
     "description" : "Generate environment using single image.",
     "blender" : (4, 3, 0),
@@ -430,7 +430,7 @@ class SNA_OT_Dgs_Render_Import_Ply_E0A3A(bpy.types.Operator, ImportHelper):
 
 class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
     """Main panel for minimal 3DGS display"""
-    bl_label = 'Easy Env'
+    bl_label = 'EasyEnv'
     bl_idname = 'SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
