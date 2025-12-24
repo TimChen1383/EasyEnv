@@ -12,9 +12,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "3DGS Render by KIRI Engine (Minimal)",
-    "author" : "KIRI ENGINE", 
-    "description" : "Minimal 3DGS display suite for Blender",
+    "name" : "Easy Env",
+    "author" : "Tim Chen", 
+    "description" : "Generate environment using single image.",
     "blender" : (4, 3, 0),
     "version" : (4, 1, 4),
     "location" : "",
@@ -430,12 +430,12 @@ class SNA_OT_Dgs_Render_Import_Ply_E0A3A(bpy.types.Operator, ImportHelper):
 
 class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
     """Main panel for minimal 3DGS display"""
-    bl_label = '3DGS Render (Minimal)'
+    bl_label = 'Easy Env'
     bl_idname = 'SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_context = ''
-    bl_category = '3DGS Render'
+    bl_category = 'Easy Env'
     bl_order = 0
     bl_ui_units_x=0
 
