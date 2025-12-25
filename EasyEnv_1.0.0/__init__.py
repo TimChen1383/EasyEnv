@@ -672,7 +672,7 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
 
         # Device selection
         col = box.column(align=True)
-        col.prop(context.scene.sna_generation_settings, 'device', text='')
+        col.prop(context.scene.sna_generation_settings, 'device', text='Device')
 
         # Export path selection
         col = box.column(align=True)
