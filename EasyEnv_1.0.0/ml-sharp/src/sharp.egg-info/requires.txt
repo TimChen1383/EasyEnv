@@ -1,0 +1,10 @@
+click
+gsplat
+imageio[ffmpeg]
+matplotlib
+pillow-heif
+plyfile
+scipy
+timm
+torch
+torchvision
