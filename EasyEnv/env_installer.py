@@ -187,12 +187,36 @@ def install_requirements(python_exe: Path, requirements_file: Path, progress_cal
 
     print(f"Installing packages from: {requirements_file}")
 
+    # Read requirements and filter out problematic lines
+    # The sharp package is already available via PYTHONPATH (ml-sharp/src)
+    # so we don't need to install it via pip
+    with open(requirements_file, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Filter out editable install lines and comments-only lines
+    filtered_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # Skip editable installs (-e), empty lines, and comment-only lines
+        if stripped and not stripped.startswith('-e') and not stripped.startswith('#'):
+            # Keep lines that have actual package specifications
+            if not stripped.startswith('via'):  # Skip uv metadata comments
+                filtered_lines.append(line)
+
+    # Create temporary filtered requirements file
+    temp_requirements = MLSHARP_ENV_DIR / "requirements_filtered.txt"
+    with open(temp_requirements, 'w', encoding='utf-8') as f:
+        f.writelines(filtered_lines)
+
+    print(f"Filtered requirements (removed editable installs):")
+    print(f"Original lines: {len(lines)}, Filtered lines: {len(filtered_lines)}")
+
     # Install packages using pip
     cmd = [
         str(python_exe),
         "-m", "pip",
         "install",
-        "-r", str(requirements_file),
+        "-r", str(temp_requirements),
         "--no-warn-script-location"
     ]
 
@@ -213,6 +237,10 @@ def install_requirements(python_exe: Path, requirements_file: Path, progress_cal
         print(line.rstrip())
 
     process.wait()
+
+    # Clean up temporary file
+    if temp_requirements.exists():
+        temp_requirements.unlink()
 
     if process.returncode != 0:
         raise RuntimeError(f"Failed to install requirements. Exit code: {process.returncode}")
