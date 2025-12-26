@@ -468,16 +468,23 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
                 if not property_exists("bpy.data.materials['KIRI_3DGS_Render_Material']", globals(), locals()):
                     before_data = list(bpy.data.materials)
                     bpy.ops.wm.append(
-                        directory=os.path.join(os.path.dirname(__file__), 'assets', '3DGS Render APPEND V4.blend') + r'\Material', 
-                        filename='KIRI_3DGS_Render_Material', 
+                        directory=os.path.join(os.path.dirname(__file__), 'assets', '3DGS Render APPEND V4.blend') + r'\Material',
+                        filename='KIRI_3DGS_Render_Material',
                         link=False
                     )
-                    new_data = list(filter(lambda d: not d in before_data, list(bpy.data.materials)))
-                
-                if obj.data.materials:
-                    obj.data.materials[0] = bpy.data.materials['KIRI_3DGS_Render_Material']
-                else:
-                    obj.data.materials.append(bpy.data.materials['KIRI_3DGS_Render_Material'])
+
+                # Configure sorter based on material render method
+                obj.modifiers['KIRI_3DGS_Sorter_GN'].show_viewport = (bpy.data.materials['KIRI_3DGS_Render_Material'].surface_render_method == 'BLENDED')
+                obj.modifiers['KIRI_3DGS_Sorter_GN'].show_render = (bpy.data.materials['KIRI_3DGS_Render_Material'].surface_render_method == 'BLENDED')
+
+                # Remove existing material slots and assign KIRI material
+                while len(obj.material_slots) > 0:
+                    bpy.context.view_layer.objects.active = obj
+                    bpy.context.object.active_material_index = 0
+                    bpy.ops.object.material_slot_remove()
+
+                obj.data.materials.append(bpy.data.materials['KIRI_3DGS_Render_Material'])
+                obj.modifiers['KIRI_3DGS_Render_GN']['Socket_61'] = bpy.data.materials['KIRI_3DGS_Render_Material']
                 
                 obj.name = f"3DGS_{image_path.stem}"
                 
