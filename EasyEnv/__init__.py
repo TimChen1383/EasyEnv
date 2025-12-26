@@ -795,10 +795,8 @@ class SNA_GROUP_sna_generation_settings_group(bpy.types.PropertyGroup):
         items=[
             ('cuda', 'GPU (CUDA)', 'Use NVIDIA GPU - fastest if available', 'MEMORY', 0),
             ('cpu', 'CPU', 'Use CPU - slower but always compatible', 'PREVIEW_RANGE', 1),
-            ('default', 'Auto', 'Automatically select best device', 'FILE_REFRESH', 2),
-            ('mps', 'MPS', 'Use Apple Silicon GPU if available', 'SYSTEM', 3),
         ],
-        default='default'
+        default='cuda'
     )
     export_path: bpy.props.StringProperty(
         name="Export Path",

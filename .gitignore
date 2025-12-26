@@ -56,3 +56,5 @@ desktop.ini
 *.blend2
 
 # Claude
+.claude
+CLAUDE.md
