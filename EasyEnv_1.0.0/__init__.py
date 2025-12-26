@@ -393,6 +393,15 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
                     return {'CANCELLED'}
                 
                 obj = imported_objects[0]
+
+                # Auto-rotate imported PLY 90 degrees about X to match Blender coordinates
+                import math
+                try:
+                    obj.rotation_mode = 'XYZ'
+                    obj.rotation_euler.x += math.radians(90)
+                except Exception:
+                    pass
+
                 if obj.type != 'MESH':
                     self.report({'ERROR'}, "Imported object is not a mesh.")
                     return {'CANCELLED'}
@@ -505,153 +514,6 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
             return {'CANCELLED'}
 
 
-class SNA_OT_Dgs_Render_Import_Ply_E0A3A(bpy.types.Operator, ImportHelper):
-    """Import PLY - Imports a .PLY file and adds 3DGS modifiers"""
-    bl_idname = "sna.dgs_render_import_ply_e0a3a"
-    bl_label = "Import PLY"
-    bl_description = "Imports a .PLY file and adds 3DGS modifiers and attributes."
-    bl_options = {"REGISTER", "UNDO"}
-    filter_glob: bpy.props.StringProperty(default='*.ply', options={'HIDDEN'})
-
-    @classmethod
-    def poll(cls, context):
-        if bpy.app.version >= (3, 0, 0) and True:
-            cls.poll_message_set('')
-        return not False
-
-    def execute(self, context):
-        ply_import_path = self.filepath
-        
-        # Check if the file path is provided and exists
-        if not ply_import_path or not os.path.exists(ply_import_path):
-            self.report({'ERROR'}, f"File not found at {ply_import_path}")
-            return {'CANCELLED'}
-        
-        try:
-            # Import the PLY file using Blender's native importer
-            try:
-                bpy.ops.wm.ply_import(filepath=ply_import_path)
-            except AttributeError:
-                self.report({'ERROR'}, "PLY importer not found. Ensure Blender 4.0 or later is used.")
-                return {'CANCELLED'}
-            
-            # Get the imported object
-            imported_objects = [obj for obj in bpy.context.scene.objects if obj.select_get()]
-            if not imported_objects:
-                self.report({'ERROR'}, "No objects were imported from the PLY file.")
-                return {'CANCELLED'}
-            
-            obj = imported_objects[0]
-            if obj.type != 'MESH':
-                self.report({'ERROR'}, "Imported object is not a mesh.")
-                return {'CANCELLED'}
-            
-            # Verify required 3DGS attributes
-            mesh = obj.data
-            required_attributes = ['f_dc_0', 'f_dc_1', 'f_dc_2', 'opacity', 'scale_0', 'scale_1', 'scale_2', 
-                                 'rot_0', 'rot_1', 'rot_2', 'rot_3']
-            
-            missing_attrs = []
-            for attr_name in required_attributes:
-                if attr_name not in mesh.attributes:
-                    missing_attrs.append(attr_name)
-            
-            if missing_attrs:
-                self.report({'ERROR'}, f"Missing 3DGS attributes: {', '.join(missing_attrs)}")
-                return {'CANCELLED'}
-            
-            # Set as vertex type mesh
-            obj['3DGS_Mesh_Type'] = 'vert'
-            
-            # Create color attributes from f_dc and opacity
-            SH_0 = 0.28209479177387814
-            point_count = len(mesh.vertices)
-            expected_length = point_count * 4
-            
-            # Extract data from attributes
-            f_dc_0_data = np.array([v.value for v in mesh.attributes['f_dc_0'].data])
-            f_dc_1_data = np.array([v.value for v in mesh.attributes['f_dc_1'].data])
-            f_dc_2_data = np.array([v.value for v in mesh.attributes['f_dc_2'].data])
-            opacity_data = np.array([v.value for v in mesh.attributes['opacity'].data])
-            
-            # Calculate RGB and Alpha for each point
-            color_data = []
-            for i in range(point_count):
-                R = max(0.0, min(1.0, f_dc_0_data[i] * SH_0 + 0.5))
-                G = max(0.0, min(1.0, f_dc_1_data[i] * SH_0 + 0.5))
-                B = max(0.0, min(1.0, f_dc_2_data[i] * SH_0 + 0.5))
-                # Calculate Alpha (using sigmoid)
-                A = max(0.0, min(1.0, 1 / (1 + np.exp(-opacity_data[i]))))
-                color_data.extend([R, G, B, A])
-            
-            # Create Col attribute
-            if 'Col' in mesh.attributes:
-                mesh.attributes.remove(mesh.attributes['Col'])
-            col_attr = mesh.attributes.new(name="Col", type='FLOAT_COLOR', domain='POINT')
-            col_attr.data.foreach_set("color", color_data)
-            
-            # Create KIRI_3DGS_Paint attribute
-            if 'KIRI_3DGS_Paint' in mesh.attributes:
-                mesh.attributes.remove(mesh.attributes['KIRI_3DGS_Paint'])
-            paint_attr = mesh.attributes.new(name="KIRI_3DGS_Paint", type='FLOAT_COLOR', domain='POINT')
-            paint_attr.data.foreach_set("color", color_data)
-            mesh.color_attributes.active_color = paint_attr
-            
-            # Add geometry node modifiers
-            sna_append_and_add_geo_nodes_function_execute_6BCD7('KIRI_3DGS_Render_GN', 'KIRI_3DGS_Render_GN', obj)
-            sna_append_and_add_geo_nodes_function_execute_6BCD7('KIRI_3DGS_Sorter_GN', 'KIRI_3DGS_Sorter_GN', obj)
-            sna_append_and_add_geo_nodes_function_execute_6BCD7('KIRI_3DGS_Adjust_Colour_And_Material', 'KIRI_3DGS_Adjust_Colour_And_Material', obj)
-            sna_append_and_add_geo_nodes_function_execute_6BCD7('KIRI_3DGS_Write F_DC_And_Merge', 'KIRI_3DGS_Write F_DC_And_Merge', obj)
-            
-            # Configure modifiers
-            obj.modifiers['KIRI_3DGS_Render_GN'].show_viewport = False
-            obj.modifiers['KIRI_3DGS_Adjust_Colour_And_Material'].show_viewport = True
-            obj.modifiers['KIRI_3DGS_Write F_DC_And_Merge'].show_viewport = False
-            obj.modifiers['KIRI_3DGS_Adjust_Colour_And_Material'].show_render = True
-            obj.modifiers['KIRI_3DGS_Write F_DC_And_Merge'].show_render = False
-            obj.modifiers['KIRI_3DGS_Render_GN']['Socket_50'] = 1
-            
-            # Set up properties
-            obj['update_rot_to_cam'] = False
-            obj.sna_dgs_object_properties.enable_active_camera_updates = False
-            obj.sna_dgs_object_properties.active_object_update_mode = 'Enable Camera Updates'
-            
-            # Append and assign material
-            if not property_exists("bpy.data.materials['KIRI_3DGS_Render_Material']", globals(), locals()):
-                before_data = list(bpy.data.materials)
-                bpy.ops.wm.append(
-                    directory=os.path.join(os.path.dirname(__file__), 'assets', '3DGS Render APPEND V4.blend') + r'\Material', 
-                    filename='KIRI_3DGS_Render_Material', 
-                    link=False
-                )
-            
-            # Configure sorter based on material render method
-            obj.modifiers['KIRI_3DGS_Sorter_GN'].show_viewport = (bpy.data.materials['KIRI_3DGS_Render_Material'].surface_render_method == 'BLENDED')
-            obj.modifiers['KIRI_3DGS_Sorter_GN'].show_render = (bpy.data.materials['KIRI_3DGS_Render_Material'].surface_render_method == 'BLENDED')
-            
-            # Remove existing material slots and assign KIRI material
-            while len(obj.material_slots) > 0:
-                bpy.context.view_layer.objects.active = obj
-                bpy.context.object.active_material_index = 0
-                bpy.ops.object.material_slot_remove()
-            
-            obj.data.materials.append(bpy.data.materials['KIRI_3DGS_Render_Material'])
-            obj.modifiers['KIRI_3DGS_Render_GN']['Socket_61'] = bpy.data.materials['KIRI_3DGS_Render_Material']
-            
-            # Refresh viewport
-            obj.update_tag(refresh={'DATA'})
-            if bpy.context and bpy.context.screen:
-                for a in bpy.context.screen.areas:
-                    a.tag_redraw()
-            
-            self.report({'INFO'}, f"Successfully imported {os.path.basename(ply_import_path)}")
-            return {"FINISHED"}
-            
-        except Exception as e:
-            self.report({'ERROR'}, f"Error importing PLY file: {str(e)}")
-            return {'CANCELLED'}
-
-
 class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
     """Main panel for minimal 3DGS display"""
     bl_label = 'EasyEnv'
@@ -690,17 +552,7 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
         row.scale_y = 1.5
         row.operator('sna.generate_gaussians_from_image', text='Generate PLY from Image', icon='IMAGE_DATA')
         
-        # Import section
-        box = layout.box()
-        box.label(text='Import', icon='IMPORT')
-        row = box.row()
-        row.scale_y = 1.5
-        icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'import.svg')
-        if os.path.exists(icon_path):
-            op = row.operator('sna.dgs_render_import_ply_e0a3a', text='Import PLY', 
-                             icon_value=load_preview_icon(icon_path))
-        else:
-            op = row.operator('sna.dgs_render_import_ply_e0a3a', text='Import PLY', icon='IMPORT')
+        # (Import PLY button removed)
         
         # Active object controls
         if context.view_layer.objects.active and 'update_rot_to_cam' in context.view_layer.objects.active:
@@ -798,7 +650,6 @@ def register():
     # Register operators
     bpy.utils.register_class(SNA_OT_Dgs_Render_Align_Active_To_View_30B13)
     bpy.utils.register_class(SNA_OT_Generate_Gaussians_From_Image)
-    bpy.utils.register_class(SNA_OT_Dgs_Render_Import_Ply_E0A3A)
 
     # Register UI panel
     bpy.utils.register_class(SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1)
@@ -816,7 +667,7 @@ def unregister():
 
     # Unregister operators
     bpy.utils.unregister_class(SNA_OT_Generate_Gaussians_From_Image)
-    bpy.utils.unregister_class(SNA_OT_Dgs_Render_Import_Ply_E0A3A)
+    
     bpy.utils.unregister_class(SNA_OT_Dgs_Render_Align_Active_To_View_30B13)
 
     # Unregister property groups
