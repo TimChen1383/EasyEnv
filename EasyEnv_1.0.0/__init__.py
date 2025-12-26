@@ -462,7 +462,7 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
                 # Set up properties
                 obj['update_rot_to_cam'] = False
                 obj.sna_dgs_object_properties.enable_active_camera_updates = False
-                obj.sna_dgs_object_properties.active_object_update_mode = 'Disable Camera Updates'
+                obj.sna_dgs_object_properties.active_object_update_mode = 'Enable Camera Updates'
                 
                 # Append and assign material
                 if not property_exists("bpy.data.materials['KIRI_3DGS_Render_Material']", globals(), locals()):
@@ -607,7 +607,7 @@ class SNA_OT_Dgs_Render_Import_Ply_E0A3A(bpy.types.Operator, ImportHelper):
             # Set up properties
             obj['update_rot_to_cam'] = False
             obj.sna_dgs_object_properties.enable_active_camera_updates = False
-            obj.sna_dgs_object_properties.active_object_update_mode = 'Disable Camera Updates'
+            obj.sna_dgs_object_properties.active_object_update_mode = 'Enable Camera Updates'
             
             # Append and assign material
             if not property_exists("bpy.data.materials['KIRI_3DGS_Render_Material']", globals(), locals()):
