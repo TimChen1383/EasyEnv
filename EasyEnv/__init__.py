@@ -35,6 +35,9 @@ from mathutils import Matrix
 
 addon_keymaps = {}
 _icons = None
+_env_status_cache = None
+_env_status_cache_time = 0
+_env_fully_installed = False  # Once True, stop checking
 
 
 def property_exists(prop_path, glob, loc):
@@ -43,6 +46,52 @@ def property_exists(prop_path, glob, loc):
         return True
     except:
         return False
+
+
+def invalidate_env_cache():
+    """Force environment status to be rechecked (call after installation)"""
+    global _env_status_cache, _env_status_cache_time, _env_fully_installed
+    _env_status_cache = None
+    _env_status_cache_time = 0
+    _env_fully_installed = False
+
+
+def get_cached_environment_status():
+    """
+    Get environment status with smart caching:
+    - If fully installed: cache permanently (never check again)
+    - If installing: cache for 5 seconds
+    - On first load: check once
+    """
+    import time
+    global _env_status_cache, _env_status_cache_time, _env_fully_installed
+
+    # If we already confirmed full installation, return cached result immediately
+    if _env_fully_installed and _env_status_cache is not None:
+        return _env_status_cache
+
+    current_time = time.time()
+
+    # If not fully installed, cache for 5 seconds (for installation progress)
+    if _env_status_cache is not None and (current_time - _env_status_cache_time) < 5.0:
+        return _env_status_cache
+
+    # Update cache by checking environment
+    try:
+        from . import env_installer
+        status = env_installer.check_environment_status()
+        _env_status_cache = status
+        _env_status_cache_time = current_time
+
+        # If fully installed, mark as complete and stop checking
+        if status['python_installed'] and status['packages_installed'] and status['checkpoint_exists']:
+            _env_fully_installed = True
+            print("EasyEnv: Environment fully installed - status checking disabled")
+
+        return status
+    except Exception as e:
+        print(f"EasyEnv: Error checking environment status: {e}")
+        return {'python_installed': False, 'packages_installed': False, 'checkpoint_exists': False}
 
 
 def load_preview_icon(path):
@@ -306,6 +355,8 @@ class SNA_OT_Install_Environment(bpy.types.Operator):
                 self.cancel(context)
 
                 if self._success:
+                    # Invalidate cache to force recheck of environment status
+                    invalidate_env_cache()
                     self.report({'INFO'}, "Environment installation complete!")
                     return {'FINISHED'}
                 else:
@@ -632,14 +683,9 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        # Check environment status
-        try:
-            from . import env_installer
-            status = env_installer.check_environment_status()
-            env_ready = status['python_installed'] and status['packages_installed'] and status['checkpoint_exists']
-        except:
-            env_ready = False
-            status = {'python_installed': False, 'packages_installed': False, 'checkpoint_exists': False}
+        # Check environment status (cached to avoid slow UI)
+        status = get_cached_environment_status()
+        env_ready = status['python_installed'] and status['packages_installed'] and status['checkpoint_exists']
 
         # Environment status section (show if not fully installed)
         if not env_ready:

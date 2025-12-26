@@ -68,25 +68,36 @@ def predict_gaussians_from_image(
             checkpoint_path = bundled_checkpoint
     
     # Build command
-    # Add ml-sharp/src to PYTHONPATH so sharp package can be found
+    # Note: Windows embeddable Python often ignores PYTHONPATH, so we need to
+    # modify sys.path at runtime using a wrapper script approach
+    mlsharp_src = str(MLSHARP_DIR / "src")
+
+    # Create inline Python code that adds src to path and runs sharp.cli
+    python_code = f"""
+import sys
+sys.path.insert(0, {repr(mlsharp_src)})
+from sharp.cli import main
+sys.exit(main())
+"""
+
+    # Build command with arguments for sharp CLI
     cmd = [
         str(MLSHARP_PYTHON),
-        "-m", "sharp.cli",
+        "-c", python_code,
         "predict",
         "-i", str(image_path),
         "-o", str(output_path),
         "--device", device
     ]
-    
+
     if checkpoint_path:
         cmd.extend(["-c", str(checkpoint_path)])
-    
+
     if verbose:
         cmd.append("-v")
-    
-    # Set up environment with ml-sharp/src in PYTHONPATH
+
+    # Still set PYTHONPATH as backup (works on some systems)
     env = os.environ.copy()
-    mlsharp_src = str(MLSHARP_DIR / "src")
     if 'PYTHONPATH' in env:
         env['PYTHONPATH'] = mlsharp_src + os.pathsep + env['PYTHONPATH']
     else:
