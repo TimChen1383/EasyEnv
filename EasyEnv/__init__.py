@@ -233,9 +233,9 @@ def sna_append_and_add_geo_nodes_function_execute_6BCD7(Node_Group_Name, Modifie
     return modifier
 
 
-class SNA_OT_Dgs_Render_Align_Active_To_View_30B13(bpy.types.Operator):
+class EASYENV_OT_Align_Active_To_View(bpy.types.Operator):
     """Update Active To View - Updates the 3DGS planes to face current viewport"""
-    bl_idname = "sna.dgs_render_align_active_to_view_30b13"
+    bl_idname = "easyenv.align_active_to_view"
     bl_label = "Update Active To View"
     bl_description = "Updates the 3DGS_Render modifier once to the current view for the active object."
     bl_options = {"REGISTER", "UNDO"}
@@ -330,9 +330,9 @@ class SNA_OT_Dgs_Render_Align_Active_To_View_30B13(bpy.types.Operator):
         return self.execute(context)
 
 
-class SNA_OT_Install_Environment(bpy.types.Operator):
+class EASYENV_OT_Install_Environment(bpy.types.Operator):
     """Install ML-Sharp Environment - Downloads and installs Python environment and checkpoint"""
-    bl_idname = "sna.install_environment"
+    bl_idname = "easyenv.install_environment"
     bl_label = "Install Environment"
     bl_description = "Download and install ML-Sharp Python environment and checkpoint file"
     bl_options = {"REGISTER"}
@@ -429,9 +429,9 @@ class SNA_OT_Install_Environment(bpy.types.Operator):
             wm.event_timer_remove(self._timer)
 
 
-class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
+class EASYENV_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
     """Generate 3DGS from Image - Uses ML-Sharp to generate Gaussian Splatting from a single image"""
-    bl_idname = "sna.generate_gaussians_from_image"
+    bl_idname = "easyenv.generate_gaussians_from_image"
     bl_label = "Generate from Image"
     bl_description = "Generate Gaussian Splatting scene from a single image using ML-Sharp"
     bl_options = {"REGISTER", "UNDO"}
@@ -460,7 +460,7 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
 
         # Setup output directory
         addon_dir = Path(__file__).parent
-        custom_export_path = context.scene.sna_generation_settings.export_path.strip()
+        custom_export_path = context.scene.easyenv_generation_settings.export_path.strip()
 
         if custom_export_path and custom_export_path != "":
             # User specified a custom export path
@@ -502,9 +502,9 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
             checkpoint_path = None
         
         try:
-            
+
             # Get device setting from scene
-            device = context.scene.sna_generation_settings.device
+            device = context.scene.easyenv_generation_settings.device
 
             self.report({'INFO'}, f"Processing image: {image_path.name}")
             self.report({'INFO'}, f"Using device: {device}")
@@ -618,8 +618,8 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
                 
                 # Set up properties
                 obj['update_rot_to_cam'] = False
-                obj.sna_dgs_object_properties.enable_active_camera_updates = False
-                obj.sna_dgs_object_properties.active_object_update_mode = 'Enable Camera Updates'
+                obj.easyenv_dgs_object_properties.enable_active_camera_updates = False
+                obj.easyenv_dgs_object_properties.active_object_update_mode = 'Enable Camera Updates'
                 
                 # Append and assign material
                 if not property_exists("bpy.data.materials['KIRI_3DGS_Render_Material']", globals(), locals()):
@@ -662,10 +662,10 @@ class SNA_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper):
             return {'CANCELLED'}
 
 
-class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
+class EASYENV_PT_Main_Panel(bpy.types.Panel):
     """Main panel for minimal 3DGS display"""
     bl_label = 'EasyEnv'
-    bl_idname = 'SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1'
+    bl_idname = 'EASYENV_PT_MAIN_PANEL'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_context = ''
@@ -711,7 +711,7 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
             # Install Environment button
             row = box.row()
             row.scale_y = 1.5
-            row.operator('sna.install_environment', text='Install Environment', icon='IMPORT')
+            row.operator('easyenv.install_environment', text='Install Environment', icon='IMPORT')
 
             layout.separator()
 
@@ -721,17 +721,17 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
 
         # Device selection
         col = box.column(align=True)
-        col.prop(context.scene.sna_generation_settings, 'device', text='Device')
+        col.prop(context.scene.easyenv_generation_settings, 'device', text='Device')
 
         # Export path selection
         col = box.column(align=True)
-        col.prop(context.scene.sna_generation_settings, 'export_path', text='Output')
+        col.prop(context.scene.easyenv_generation_settings, 'export_path', text='Output')
 
         # Generate button
         row = box.row()
         row.scale_y = 1.5
         row.enabled = env_ready  # Disable if environment not ready
-        row.operator('sna.generate_gaussians_from_image', text='Generate PLY from Image', icon='IMAGE_DATA')
+        row.operator('easyenv.generate_gaussians_from_image', text='Generate PLY from Image', icon='IMAGE_DATA')
 
         # (Import PLY button removed)
         
@@ -744,24 +744,24 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
             
             # Camera update mode
             col = box.column()
-            col.prop(obj.sna_dgs_object_properties, 'active_object_update_mode', text='')
-            
+            col.prop(obj.easyenv_dgs_object_properties, 'active_object_update_mode', text='')
+
             # Update Active To View button
-            if obj.sna_dgs_object_properties.active_object_update_mode != 'Disable Camera Updates':
+            if obj.easyenv_dgs_object_properties.active_object_update_mode != 'Disable Camera Updates':
                 row = box.row()
                 row.scale_y = 1.3
                 icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'eye.svg')
                 if os.path.exists(icon_path):
-                    op = row.operator('sna.dgs_render_align_active_to_view_30b13', 
+                    op = row.operator('easyenv.align_active_to_view',
                                     text='Update Active To View',
                                     icon_value=load_preview_icon(icon_path))
                 else:
-                    op = row.operator('sna.dgs_render_align_active_to_view_30b13', 
+                    op = row.operator('easyenv.align_active_to_view',
                                     text='Update Active To View',
                                     icon='RESTRICT_VIEW_OFF')
             
 
-class SNA_GROUP_sna_dgs_object_properties_group(bpy.types.PropertyGroup):
+class EASYENV_GROUP_dgs_object_properties(bpy.types.PropertyGroup):
     """Property group for 3DGS object properties"""
     active_object_update_mode: bpy.props.EnumProperty(
         name='Active Object Update Mode',
@@ -781,7 +781,7 @@ class SNA_GROUP_sna_dgs_object_properties_group(bpy.types.PropertyGroup):
     )
 
 
-class SNA_GROUP_sna_generation_settings_group(bpy.types.PropertyGroup):
+class EASYENV_GROUP_generation_settings(bpy.types.PropertyGroup):
     """Property group for generation settings"""
     device: bpy.props.EnumProperty(
         name="Device",
@@ -806,27 +806,27 @@ def register():
     _icons = bpy.utils.previews.new()
 
     # Register property groups
-    bpy.utils.register_class(SNA_GROUP_sna_dgs_object_properties_group)
-    bpy.types.Object.sna_dgs_object_properties = bpy.props.PointerProperty(
+    bpy.utils.register_class(EASYENV_GROUP_dgs_object_properties)
+    bpy.types.Object.easyenv_dgs_object_properties = bpy.props.PointerProperty(
         name='3DGS Object Properties',
         description='Properties for 3DGS objects',
-        type=SNA_GROUP_sna_dgs_object_properties_group
+        type=EASYENV_GROUP_dgs_object_properties
     )
 
-    bpy.utils.register_class(SNA_GROUP_sna_generation_settings_group)
-    bpy.types.Scene.sna_generation_settings = bpy.props.PointerProperty(
+    bpy.utils.register_class(EASYENV_GROUP_generation_settings)
+    bpy.types.Scene.easyenv_generation_settings = bpy.props.PointerProperty(
         name='Generation Settings',
         description='Settings for Gaussian Splatting generation',
-        type=SNA_GROUP_sna_generation_settings_group
+        type=EASYENV_GROUP_generation_settings
     )
 
     # Register operators
-    bpy.utils.register_class(SNA_OT_Dgs_Render_Align_Active_To_View_30B13)
-    bpy.utils.register_class(SNA_OT_Install_Environment)
-    bpy.utils.register_class(SNA_OT_Generate_Gaussians_From_Image)
+    bpy.utils.register_class(EASYENV_OT_Align_Active_To_View)
+    bpy.utils.register_class(EASYENV_OT_Install_Environment)
+    bpy.utils.register_class(EASYENV_OT_Generate_Gaussians_From_Image)
 
     # Register UI panel
-    bpy.utils.register_class(SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1)
+    bpy.utils.register_class(EASYENV_PT_Main_Panel)
 
     print("3DGS Render (Minimal) addon registered")
 
@@ -837,19 +837,19 @@ def unregister():
     bpy.utils.previews.remove(_icons)
 
     # Unregister UI panel
-    bpy.utils.unregister_class(SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1)
+    bpy.utils.unregister_class(EASYENV_PT_Main_Panel)
 
     # Unregister operators
-    bpy.utils.unregister_class(SNA_OT_Generate_Gaussians_From_Image)
-    bpy.utils.unregister_class(SNA_OT_Install_Environment)
-    bpy.utils.unregister_class(SNA_OT_Dgs_Render_Align_Active_To_View_30B13)
+    bpy.utils.unregister_class(EASYENV_OT_Generate_Gaussians_From_Image)
+    bpy.utils.unregister_class(EASYENV_OT_Install_Environment)
+    bpy.utils.unregister_class(EASYENV_OT_Align_Active_To_View)
 
     # Unregister property groups
-    del bpy.types.Scene.sna_generation_settings
-    bpy.utils.unregister_class(SNA_GROUP_sna_generation_settings_group)
+    del bpy.types.Scene.easyenv_generation_settings
+    bpy.utils.unregister_class(EASYENV_GROUP_generation_settings)
 
-    del bpy.types.Object.sna_dgs_object_properties
-    bpy.utils.unregister_class(SNA_GROUP_sna_dgs_object_properties_group)
+    del bpy.types.Object.easyenv_dgs_object_properties
+    bpy.utils.unregister_class(EASYENV_GROUP_dgs_object_properties)
 
     print("3DGS Render (Minimal) addon unregistered")
 
