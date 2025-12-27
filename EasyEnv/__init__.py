@@ -760,12 +760,6 @@ class SNA_PT_DGS_RENDER_BY_KIRI_ENGINE_6D2B1(bpy.types.Panel):
                                     text='Update Active To View',
                                     icon='RESTRICT_VIEW_OFF')
             
-            # Enable Active Camera Updates toggle (only for Enable Camera Updates mode)
-            if obj.sna_dgs_object_properties.active_object_update_mode == 'Enable Camera Updates':
-                col = box.column()
-                col.prop(obj.sna_dgs_object_properties, 'enable_active_camera_updates', 
-                        text='Enable Active Camera Updates')
-
 
 class SNA_GROUP_sna_dgs_object_properties_group(bpy.types.PropertyGroup):
     """Property group for 3DGS object properties"""
