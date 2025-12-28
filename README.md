@@ -1,5 +1,5 @@
 # EasyEnv
-EasyEnv is a Blender Add On which can generate 3D gaussain splatting environment based on a single image. Leverage the technique from ml-sharp (from Apple) and 3DGS Render (from Kiri Engine). 
+EasyEnv is a Blender Add On which can generate 3D gaussain splatting environment based on a single image. Leverage the technique of ml-sharp (from Apple) and 3DGS Render (from Kiri Engine). 
 
 (put some sample result here)
 
