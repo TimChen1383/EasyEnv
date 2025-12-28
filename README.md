@@ -48,3 +48,6 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 ![folder](https://github.com/user-attachments/assets/2b442f18-2db5-4bbe-a0dc-3673a25b0d59)
 ![EnableAddOn](https://github.com/user-attachments/assets/3e40f3a5-89ee-445b-9837-0d01bee5d097)
 
+## Acknowledgments
+- ml-sharp (Sharp Monocular View Synthesis in Less Than a Second) by Apple Inc. : https://github.com/apple/ml-sharp?tab=readme-ov-file
+- 3DGS Render Blender Addon by Kiri Engine : https://github.com/Kiri-Innovation/3dgs-render-blender-addon?tab=readme-ov-file
