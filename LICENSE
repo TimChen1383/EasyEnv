@@ -1,13 +1,9 @@
-## License
-
 This Blender Add-on is licensed under the **GNU General Public License v3.0 or later (GPL-3.0+)**.
-
-### Third-party Licenses
 
 This project includes or incorporates code from the following:
 
-- **ml-sharp (Apple)** — licensed under the **Apple-MIT License (permissive)**. See LICENSE-APPLE-MIT file for details.
-- **3DGS Render Blender Addon (KIRI Engine)** — includes or references code under **Apache License 2.0**. See LICENSE-APACHE file for details.
+- ml-sharp (Apple) — licensed under the Apple-MIT License (permissive). See LICENSE-APPLE-MIT file for details.
+- 3DGS Render Blender Addon (KIRI Engine) — includes or references code under Apache License 2.0. See LICENSE-APACHE file for details.
 
 All copyright and license notices from these projects are preserved and included in this repository.
 
