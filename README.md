@@ -6,7 +6,7 @@ EasyEnv is a Blender Add On which can generate 3D gaussain splatting environment
 
 ## Prerequisite
 ```diff
-Although the Add On support CPU, still highly recommend using GPU for faster 3D scenw generation
+Although the Add On support CPU, still highly recommend using GPU for faster 3D scene generation
 ```
 - ***Tested Platform*** : Windows
 - ***Blender Version*** : 4.3 and above (4.4, 4.5, 5.0...)
