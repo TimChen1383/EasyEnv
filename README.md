@@ -34,7 +34,7 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 
 
 ## Manual Installation
-- If your Blender does not have access to the internet, you can manually download the whole file and place it in Blender's Extensions Folder
+- If your Blender does not have access to the internet, you can manually download the whole file and place it in Blender's Extensions folder
 - For example, extract the EasyEnv file from the zip file and place it in this folder : C:\Users\TimChen\AppData\Roaming\Blender Foundation\Blender\4.3\extensions\user_default (use your Blender extension path)
 - ZIP file link :
 
