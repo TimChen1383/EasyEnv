@@ -27,7 +27,7 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 2. `Install Environment Button` : Install all the files needed for this Add On with internet (It's self-contained. Won't affect your computer's system)
 3. `Device Mode` : Choose to generate 3D scene with GPU or CPU
 4. `Output Folder` : Choose the output folder for the generated 3D scene file
-5. `Generate Button` : Choose an image and start generate 3D scene
+5. `Generate Button` : Choose an image and start generating 3D scene
 6. `View Mode` : Choose to display 3D scene as Gaussian Splats or Point Clouds (need to select the object first)
 7. `Update Splats Direction` : Update Gaussian Splats to face the viewport (need to select the object first)
 8. `Color Adjustment` : Adjust the brightness, contrast, hue and saturation of the Gaussian Splats (need to select the object first)
