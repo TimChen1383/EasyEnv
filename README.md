@@ -10,7 +10,7 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 ```
 - ***Tested Platform*** : Windows
 - ***Blender Version*** : 4.3 and above (4.4, 4.5, 5.0...)
-- ***Full File Size*** : 10GB (after all models and packages got downloaded)
+- ***Full File Size*** : 10GB (after all files got downloaded)
 - ***Suggested GPU*** : NVIDIA RTX series or GTX 16 series or newer (Tested on RTX 2070)
 - ***Suggested GPU drivers*** : NVIDIA driver version 525.60.13 or newer (for CUDA 12.x support)
 - ***Suggested Blender Render*** : EEVEE
