@@ -21,7 +21,10 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 (add tutorial video here)
 
 ### Installation
-1. Download the zip file from GitHub Realses page 
+<img width="657" height="258" alt="InstallFromDisk" src="https://github.com/user-attachments/assets/223d4564-ec89-4379-baeb-7797100a1cdc" />
+
+1. Download the zip file from GitHub Realses page
+2. Go to Preferences, Add-ons, Install from disk and choose the downloaded zip file
 
 ### Use
 <img width="921" height="239" alt="UI_Panel" src="https://github.com/user-attachments/assets/2bb67591-66e1-4019-aaa5-4ced80bd6d13" />
