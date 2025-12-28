@@ -21,10 +21,11 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 (add tutorial video here)
 
 ### Installation
-0. Download the zip file from GitHub Realses page 
+1. Download the zip file from GitHub Realses page 
 
 ### Use
 <img width="921" height="239" alt="UI_Panel" src="https://github.com/user-attachments/assets/2bb67591-66e1-4019-aaa5-4ced80bd6d13" />
+
 1. `Environment Checking Panel` : Checking the status of installation. If all the files got installed, this panel will be gone
 2. `Install Environment Button` : Install all the files needed for this Add On with internet (It's self-contained. Won't affect your computer's system)
 3. `Device Mode` : Choose to generate 3D scene with GPU or CPU
