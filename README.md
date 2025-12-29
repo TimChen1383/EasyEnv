@@ -48,7 +48,7 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 -Sometimes the Environment Setup Panel may show up with python packages not found if we place the folder manually. Just close Blender and open again
 ```
 
-![folder](https://github.com/user-attachments/assets/2b442f18-2db5-4bbe-a0dc-3673a25b0d59)
+<img width="639" height="144" alt="placeinfolder" src="https://github.com/user-attachments/assets/0a7cbebe-142c-48b7-b495-f6ad87266d90" />
 ![EnableAddOn](https://github.com/user-attachments/assets/3e40f3a5-89ee-445b-9837-0d01bee5d097)
 
 ## Acknowledgments
