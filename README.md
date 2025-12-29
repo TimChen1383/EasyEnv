@@ -18,7 +18,8 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 
 ## Installation & Use
 
-Tutorial
+Video tutorial
+
 [![Watch the video](https://img.youtube.com/vi/pbBLFKZL080/0.jpg)](https://www.youtube.com/watch?v=pbBLFKZL080)
 
 
