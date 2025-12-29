@@ -294,7 +294,8 @@ def install_pytorch_cuda_windows(python_exe: Path, progress_callback: Optional[C
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
+        encoding='utf-8',
+        errors='replace',  # Replace invalid UTF-8 bytes instead of crashing
         bufsize=1,
         universal_newlines=True
     )
@@ -377,7 +378,8 @@ def install_requirements(python_exe: Path, requirements_file: Path, progress_cal
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
+        encoding='utf-8',
+        errors='replace',  # Replace invalid UTF-8 bytes instead of crashing
         bufsize=1,
         universal_newlines=True
     )
@@ -478,11 +480,12 @@ def check_environment_status():
     if status['python_installed']:
         try:
             # Check for core dependencies (torch and gsplat are the main ones)
+            # Note: torch can take 20+ seconds to import the first time, especially with CUDA
             result = subprocess.run(
                 [str(python_exe), "-c", "import torch; import gsplat; print('OK')"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=30  # Increased from 10 to 30 seconds for first-time import
             )
             status['packages_installed'] = (result.returncode == 0 and 'OK' in result.stdout)
 
@@ -493,7 +496,7 @@ def check_environment_status():
                         [str(python_exe), "-c", "import torch; print('CUDA' if torch.cuda.is_available() else 'CPU')"],
                         capture_output=True,
                         text=True,
-                        timeout=10
+                        timeout=30  # Increased from 10 to 30 seconds for first-time import
                     )
                     if cuda_check.returncode == 0:
                         status['cuda_available'] = 'CUDA' in cuda_check.stdout
