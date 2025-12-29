@@ -43,7 +43,7 @@ Although the Add On support CPU, still highly recommend using GPU for faster 3D 
 - If your Blender does not have access to the internet, you can manually download the whole file, place it in Blender's Extensions folder and skip the installation process
 - For example, extract the EasyEnv file from the zip file and place it in this folder : `C:\Users\TimChen\AppData\Roaming\Blender Foundation\Blender\4.3\extensions\user_default` (use your own Blender extension path)
 - After place the entire file in Blender's Extensions folder, enable the Add On through the Add On panel
-- Full ZIP file link (10GB) : https://drive.google.com/drive/folders/1c8wVdXtA7EKcuABRp-QfWXXhxgiCUVrK?usp=sharing
+- Full size ZIP file link : https://drive.google.com/drive/folders/1c8wVdXtA7EKcuABRp-QfWXXhxgiCUVrK?usp=sharing
 ```diff
 -Sometimes the Environment Setup Panel may show up with python packages not found if we place the folder manually. Just close Blender and open again
 ```
