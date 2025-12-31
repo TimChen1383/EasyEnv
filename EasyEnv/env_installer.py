@@ -219,26 +219,31 @@ def install_pip(python_exe: Path, progress_callback: Optional[Callable[[str], No
     return True
 
 
-def install_setuptools(python_exe: Path, progress_callback: Optional[Callable[[str], None]] = None):
+def upgrade_pip_and_build_tools(python_exe: Path, progress_callback: Optional[Callable[[str], None]] = None):
     """
-    Install setuptools and wheel before installing other packages.
-    These are required to build packages from source (e.g., MarkupSafe).
+    Install pip, setuptools, and wheel at specific pinned versions.
+    This ensures compatibility with PyTorch 2.8.0 and reproducibility across installations.
+
+    Critical for avoiding "failed to install pytorch" errors reported by users.
+    Ensures setuptools==80.9.0 as required by requirements.txt for PyTorch/triton.
 
     Args:
         python_exe: Path to Python executable
         progress_callback: Optional callback for status updates
     """
     if progress_callback:
-        progress_callback("Installing build tools (setuptools, wheel)...")
+        progress_callback("Installing pip and build tools at pinned versions...")
 
-    print("Installing setuptools and wheel (required for building packages from source)...")
+    print("Installing pip, setuptools, and wheel at pinned versions for PyTorch compatibility...")
 
     cmd = [
         str(python_exe),
         "-m", "pip",
         "install",
-        "setuptools",
-        "wheel",
+        "--upgrade",  # Upgrade to pinned versions if different from current
+        "pip>=24.0",
+        "setuptools==80.9.0",  # Exact version from requirements.txt
+        "wheel>=0.44.0",
         "--no-warn-script-location"
     ]
 
@@ -253,10 +258,27 @@ def install_setuptools(python_exe: Path, progress_callback: Optional[Callable[[s
     if result.returncode != 0:
         print(f"Build tools installation output: {result.stdout}")
         print(f"Build tools installation errors: {result.stderr}")
-        raise RuntimeError(f"Failed to install setuptools and wheel: {result.stderr}")
+        raise RuntimeError(f"Failed to install build tools at pinned versions: {result.stderr}")
+
+    print("Successfully installed pip and build tools at pinned versions")
+
+    # Display installed versions for verification
+    try:
+        version_check = subprocess.run(
+            [str(python_exe), "-m", "pip", "list"],
+            capture_output=True,
+            text=True
+        )
+        if version_check.returncode == 0:
+            # Extract and display pip, setuptools, wheel versions
+            for line in version_check.stdout.splitlines():
+                if any(pkg in line.lower() for pkg in ['pip', 'setuptools', 'wheel']):
+                    print(f"  {line}")
+    except Exception:
+        pass
 
     if progress_callback:
-        progress_callback("Build tools installed successfully")
+        progress_callback("Build tools installed at pinned versions successfully")
 
     return True
 
@@ -542,10 +564,10 @@ def install_environment_windows(progress_callback: Optional[Callable[[str], None
                 progress_callback("Step 2/3: Installing pip...")
             install_pip(python_exe, progress_callback)
 
-            # Install build tools first (required for building packages from source)
+            # Upgrade pip and build tools to pinned versions (critical for PyTorch compatibility)
             if progress_callback:
-                progress_callback("Step 2/3: Installing build tools...")
-            install_setuptools(python_exe, progress_callback)
+                progress_callback("Step 2/3: Upgrading pip and build tools...")
+            upgrade_pip_and_build_tools(python_exe, progress_callback)
 
             # Install PyTorch with CUDA support (Windows-specific)
             if progress_callback:
