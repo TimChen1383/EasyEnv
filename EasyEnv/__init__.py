@@ -758,6 +758,189 @@ class EASYENV_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper)
             return {'CANCELLED'}
 
 
+class EASYENV_OT_Import_PLY(bpy.types.Operator, ImportHelper):
+    """Import 3DGS PLY - Import an existing Gaussian Splatting PLY file"""
+    bl_idname = "easyenv.import_ply"
+    bl_label = "Import PLY"
+    bl_description = "Import an existing Gaussian Splatting PLY file and display it"
+    bl_options = {"REGISTER", "UNDO"}
+
+    filter_glob: bpy.props.StringProperty(
+        default='*.ply',
+        options={'HIDDEN'}
+    )
+
+    @classmethod
+    def poll(cls, context):
+        if bpy.app.version >= (3, 0, 0) and True:
+            cls.poll_message_set('')
+        return not False
+
+    def execute(self, context):
+        from pathlib import Path
+
+        ply_path = Path(self.filepath)
+
+        # Validate input
+        if not ply_path.exists():
+            self.report({'ERROR'}, f"PLY file not found: {ply_path}")
+            return {'CANCELLED'}
+
+        if ply_path.suffix.lower() != '.ply':
+            self.report({'ERROR'}, f"Not a PLY file: {ply_path}")
+            return {'CANCELLED'}
+
+        # Try to read camera metadata from PLY (works for ML-Sharp PLY files)
+        camera_metadata = None
+        try:
+            from . import sharp_wrapper
+            camera_metadata = sharp_wrapper.read_camera_metadata_from_ply(ply_path, verbose=False)
+            if camera_metadata:
+                self.report({'INFO'}, f"Found camera metadata in PLY")
+        except Exception:
+            pass  # Camera metadata is optional
+
+        try:
+            # Import PLY using Blender's built-in operator
+            try:
+                bpy.ops.wm.ply_import(filepath=str(ply_path))
+            except AttributeError:
+                self.report({'ERROR'}, "PLY importer not found. Ensure Blender 4.0 or later is used.")
+                return {'CANCELLED'}
+
+            # Get the imported object
+            imported_objects = [obj for obj in context.scene.objects if obj.select_get()]
+            if not imported_objects:
+                self.report({'ERROR'}, "No objects were imported from the PLY file.")
+                return {'CANCELLED'}
+
+            obj = imported_objects[0]
+
+            # Auto-rotate imported PLY 90 degrees about X to match Blender coordinates
+            import math
+            try:
+                obj.rotation_mode = 'XYZ'
+                obj.rotation_euler.x += math.radians(-90)
+            except Exception:
+                pass
+
+            if obj.type != 'MESH':
+                self.report({'ERROR'}, "Imported object is not a mesh.")
+                return {'CANCELLED'}
+
+            # Apply 3DGS setup
+            mesh = obj.data
+            required_attributes = ['f_dc_0', 'f_dc_1', 'f_dc_2', 'opacity',
+                                 'scale_0', 'scale_1', 'scale_2',
+                                 'rot_0', 'rot_1', 'rot_2', 'rot_3']
+
+            missing_attrs = []
+            for attr_name in required_attributes:
+                if attr_name not in mesh.attributes:
+                    missing_attrs.append(attr_name)
+
+            if missing_attrs:
+                self.report({'ERROR'}, f"Missing 3DGS attributes: {', '.join(missing_attrs)}")
+                self.report({'ERROR'}, "This doesn't appear to be a valid Gaussian Splatting PLY file.")
+                return {'CANCELLED'}
+
+            # Set as vertex type mesh
+            obj['3DGS_Mesh_Type'] = 'vert'
+
+            # Create color attributes
+            SH_0 = 0.28209479177387814
+            point_count = len(mesh.vertices)
+
+            f_dc_0_data = np.array([v.value for v in mesh.attributes['f_dc_0'].data])
+            f_dc_1_data = np.array([v.value for v in mesh.attributes['f_dc_1'].data])
+            f_dc_2_data = np.array([v.value for v in mesh.attributes['f_dc_2'].data])
+            opacity_data = np.array([v.value for v in mesh.attributes['opacity'].data])
+
+            color_data = []
+            for i in range(point_count):
+                R = max(0.0, min(1.0, f_dc_0_data[i] * SH_0 + 0.5))
+                G = max(0.0, min(1.0, f_dc_1_data[i] * SH_0 + 0.5))
+                B = max(0.0, min(1.0, f_dc_2_data[i] * SH_0 + 0.5))
+                A = max(0.0, min(1.0, 1 / (1 + np.exp(-opacity_data[i]))))
+                color_data.extend([R, G, B, A])
+
+            # Create Col attribute
+            if 'Col' in mesh.attributes:
+                mesh.attributes.remove(mesh.attributes['Col'])
+            col_attr = mesh.attributes.new(name="Col", type='FLOAT_COLOR', domain='POINT')
+            col_attr.data.foreach_set("color", color_data)
+
+            # Create KIRI_3DGS_Paint attribute
+            if 'KIRI_3DGS_Paint' in mesh.attributes:
+                mesh.attributes.remove(mesh.attributes['KIRI_3DGS_Paint'])
+            paint_attr = mesh.attributes.new(name="KIRI_3DGS_Paint", type='FLOAT_COLOR', domain='POINT')
+            paint_attr.data.foreach_set("color", color_data)
+            mesh.color_attributes.active_color = paint_attr
+
+            # Add geometry node modifiers
+            sna_append_and_add_geo_nodes_function_execute_6BCD7('KIRI_3DGS_Render_GN', 'KIRI_3DGS_Render_GN', obj)
+            sna_append_and_add_geo_nodes_function_execute_6BCD7('KIRI_3DGS_Adjust_Colour_And_Material', 'KIRI_3DGS_Adjust_Colour_And_Material', obj)
+
+            # Configure modifiers
+            obj.modifiers['KIRI_3DGS_Render_GN'].show_viewport = False
+            obj.modifiers['KIRI_3DGS_Adjust_Colour_And_Material'].show_viewport = True
+            obj.modifiers['KIRI_3DGS_Adjust_Colour_And_Material'].show_render = True
+            obj.modifiers['KIRI_3DGS_Render_GN']['Socket_50'] = 1
+
+            # Set up properties
+            obj['update_rot_to_cam'] = False
+            obj.easyenv_dgs_object_properties.enable_active_camera_updates = False
+            obj.easyenv_dgs_object_properties.active_object_update_mode = 'Enable Camera Updates'
+
+            # Append and assign material
+            if not property_exists("bpy.data.materials['KIRI_3DGS_Render_Material']", globals(), locals()):
+                before_data = list(bpy.data.materials)
+                bpy.ops.wm.append(
+                    directory=os.path.join(os.path.dirname(__file__), 'assets', '3DGS Render APPEND V4.blend') + r'\Material',
+                    filename='KIRI_3DGS_Render_Material',
+                    link=False
+                )
+
+            # Remove existing material slots and assign KIRI material
+            while len(obj.material_slots) > 0:
+                bpy.context.view_layer.objects.active = obj
+                bpy.context.object.active_material_index = 0
+                bpy.ops.object.material_slot_remove()
+
+            obj.data.materials.append(bpy.data.materials['KIRI_3DGS_Render_Material'])
+            obj.modifiers['KIRI_3DGS_Render_GN']['Socket_61'] = bpy.data.materials['KIRI_3DGS_Render_Material']
+
+            obj.name = f"3DGS_{ply_path.stem}"
+
+            # Create camera if enabled and metadata is available
+            created_camera = None
+            settings = context.scene.easyenv_generation_settings
+            if settings.create_camera and camera_metadata:
+                try:
+                    camera_name = f"Camera_{ply_path.stem}"
+                    created_camera = create_camera_from_metadata(
+                        camera_metadata,
+                        name=camera_name,
+                        set_render_resolution=settings.set_render_resolution
+                    )
+                    self.report({'INFO'}, f"Created camera: {created_camera.name} "
+                                f"(focal length: {created_camera.data.lens:.1f}mm)")
+                except Exception as e:
+                    self.report({'WARNING'}, f"Failed to create camera: {str(e)}")
+
+            success_msg = f"Successfully imported Gaussian Splatting: {obj.name}"
+            if created_camera:
+                success_msg += f" with camera {created_camera.name}"
+            self.report({'INFO'}, success_msg)
+            return {'FINISHED'}
+
+        except Exception as e:
+            self.report({'ERROR'}, f"Error importing PLY: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {'CANCELLED'}
+
+
 class EASYENV_PT_Main_Panel(bpy.types.Panel):
     """Main panel for minimal 3DGS display"""
     bl_label = 'EasyEnv'
@@ -836,7 +1019,10 @@ class EASYENV_PT_Main_Panel(bpy.types.Panel):
         row.enabled = env_ready  # Disable if environment not ready
         row.operator('easyenv.generate_gaussians_from_image', text='Generate PLY from Image', icon='IMAGE_DATA')
 
-        # (Import PLY button removed)
+        # Import PLY button
+        row = box.row()
+        row.scale_y = 1.5
+        row.operator('easyenv.import_ply', text='Import Existing PLY', icon='IMPORT')
         
         # Active object controls
         if context.view_layer.objects.active and 'update_rot_to_cam' in context.view_layer.objects.active:
@@ -954,6 +1140,7 @@ def register():
     bpy.utils.register_class(EASYENV_OT_Align_Active_To_View)
     bpy.utils.register_class(EASYENV_OT_Install_Environment)
     bpy.utils.register_class(EASYENV_OT_Generate_Gaussians_From_Image)
+    bpy.utils.register_class(EASYENV_OT_Import_PLY)
 
     # Register UI panel
     bpy.utils.register_class(EASYENV_PT_Main_Panel)
@@ -970,6 +1157,7 @@ def unregister():
     bpy.utils.unregister_class(EASYENV_PT_Main_Panel)
 
     # Unregister operators
+    bpy.utils.unregister_class(EASYENV_OT_Import_PLY)
     bpy.utils.unregister_class(EASYENV_OT_Generate_Gaussians_From_Image)
     bpy.utils.unregister_class(EASYENV_OT_Install_Environment)
     bpy.utils.unregister_class(EASYENV_OT_Align_Active_To_View)
