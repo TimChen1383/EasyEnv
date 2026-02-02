@@ -40,7 +40,7 @@ Video tutorial
 6. `View Mode` : Choose to display 3D scene as Gaussian Splats or Point Clouds (need to select the object first)
 7. `Update Splats Direction` : Update Gaussian Splats to face the viewport (need to select the object first)
 8. `Color Adjustment` : Adjust the brightness, contrast, hue and saturation of the Gaussian Splats (need to select the object first)
-- Supported Image Format: .jpg, .png
+- Supported Input Image Format: .jpg, .png
 
 
 ## Manual Installation
