@@ -30,16 +30,27 @@ Video tutorial
 2. Go to Preferences, Add-ons, Install from disk and choose the downloaded zip file
 
 ### Use
-<img width="921" height="239" alt="UI_Panel" src="https://github.com/user-attachments/assets/2bb67591-66e1-4019-aaa5-4ced80bd6d13" />
+
+<img width="804" height="239" alt="EasyEnv_UI" src="https://github.com/user-attachments/assets/f49d0928-6039-4af1-b91a-b97aedd78638" />
+
+***Environment Setup Panel***
 
 1. `Environment Setup Panel` : Checking the status of installation. If all the files got installed, this panel will be gone. Just need to install once
 2. `Install Environment Button` : Install all the files needed for this Add On with internet (It's self-contained. Won't affect your computer's system)
+
+***Generate Panel***
+
 3. `Device Mode` : Choose to generate 3D scene with GPU or CPU
-4. `Output Folder` : Choose the output folder for the generated 3D scene file
-5. `Generate Button` : Choose an image and start generating 3D scene
-6. `View Mode` : Choose to display 3D scene as Gaussian Splats or Point Clouds (need to select the object first)
-7. `Update Splats Direction` : Update Gaussian Splats to face the viewport (need to select the object first)
-8. `Color Adjustment` : Adjust the brightness, contrast, hue and saturation of the Gaussian Splats (need to select the object first)
+4. `Output Folder` : Choose the output folder for the generated 3D scene .ply file
+5. `Create Camera Checkbox` : Create the camera of original input image when generating 3D scene. `Set Render Resolution Checkbox` : Set the render resolution to match with original input image
+6. `Generate PLY Button` : Choose an input image and start generating 3D scene
+7. `Import PLY Button` : Import the existing gaussian splatting .ply file into the scene
+
+***Adjustment Panel***
+
+8. `View Mode` : Choose to display 3D scene as Gaussian Splats or Point Clouds (need to select the object first)
+9. `Update Splats Direction` : Update Gaussian Splats to face the viewport (need to select the object first)
+10. `Color Adjustment` : Adjust the brightness, contrast, hue and saturation of the Gaussian Splats (need to select the object first)
 - Supported Input Image Format: .jpg, .png
 
 
