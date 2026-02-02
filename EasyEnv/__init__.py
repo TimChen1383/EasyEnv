@@ -407,8 +407,9 @@ class EASYENV_OT_Install_Environment(bpy.types.Operator):
 
     def modal(self, context, event):
         if event.type == 'TIMER':
-            # Update UI with current status
-            context.area.tag_redraw()
+            # Update UI with current status (area may be None if user switched workspaces)
+            if context.area:
+                context.area.tag_redraw()
 
             # Check if installation thread is still running
             if not self._is_running:
