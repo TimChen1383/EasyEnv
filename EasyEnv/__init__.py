@@ -216,6 +216,67 @@ def sna_update_camera_single_time_9EF18():
             a.tag_redraw()
 
 
+def create_camera_from_metadata(camera_metadata: dict, name: str = "GeneratedCamera",
+                                 set_render_resolution: bool = False) -> 'bpy.types.Object':
+    """
+    Create a Blender camera matching the original viewpoint from ML-Sharp.
+
+    Args:
+        camera_metadata: Dict with 'focal_length_px', 'width', 'height', 'cx', 'cy'
+        name: Name for the camera object
+        set_render_resolution: If True, set scene render resolution to match image size
+
+    Returns:
+        The created camera object
+    """
+    import math
+
+    # Extract metadata
+    focal_length_px = camera_metadata['focal_length_px']
+    width = camera_metadata['width']
+    height = camera_metadata['height']
+
+    # Convert focal length from pixels to mm
+    # ML-Sharp uses: f_px = f_mm * diagonal_px / 43.27 (35mm film diagonal)
+    # To convert back: f_mm = f_px * 43.27 / diagonal_px
+    diagonal_px = math.sqrt(width ** 2 + height ** 2)
+    focal_length_mm = focal_length_px * 43.27 / diagonal_px
+
+    # Create camera data
+    camera_data = bpy.data.cameras.new(name=name)
+
+    # Set sensor to 35mm film (36x24mm)
+    camera_data.sensor_width = 36.0
+    camera_data.sensor_height = 24.0
+    camera_data.sensor_fit = 'HORIZONTAL'
+
+    # Set focal length
+    camera_data.lens = focal_length_mm
+
+    # Create camera object at origin
+    camera_obj = bpy.data.objects.new(name=name, object_data=camera_data)
+    bpy.context.collection.objects.link(camera_obj)
+
+    # Rotate camera -90° about X axis (same as mesh rotation for Blender coordinates)
+    # ML-Sharp camera looks +Z, but after -90° X rotation, it looks +Y in Blender
+    camera_obj.rotation_mode = 'XYZ'
+    camera_obj.rotation_euler.x = math.radians(90)
+
+    # Optionally set render resolution to match image size
+    if set_render_resolution:
+        bpy.context.scene.render.resolution_x = width
+        bpy.context.scene.render.resolution_y = height
+        bpy.context.scene.render.resolution_percentage = 100
+
+    # Select the camera
+    camera_obj.select_set(True)
+
+    print(f"Created camera '{name}' with focal length {focal_length_mm:.2f}mm "
+          f"(from {focal_length_px:.2f}px at {width}x{height})")
+
+    return camera_obj
+
+
 def sna_append_and_add_geo_nodes_function_execute_6BCD7(Node_Group_Name, Modifier_Name, Object):
     """Append geometry node group from library file and add as modifier"""
     if not property_exists(f"bpy.data.node_groups['{Node_Group_Name}']", globals(), locals()):
@@ -512,14 +573,14 @@ class EASYENV_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper)
             self.report({'INFO'}, f"This may take a few minutes depending on your hardware...")
 
             # Generate Gaussian Splatting
-            output_ply = sharp_wrapper.predict_gaussians_from_image(
+            output_ply, camera_metadata = sharp_wrapper.predict_gaussians_from_image(
                 image_path=image_path,
                 output_path=output_dir,
                 checkpoint_path=checkpoint_path,
                 device=device,
                 verbose=False
             )
-            
+
             self.report({'INFO'}, f"Generated PLY file: {output_ply.name}")
             
             # Now import the generated PLY file
@@ -636,8 +697,51 @@ class EASYENV_OT_Generate_Gaussians_From_Image(bpy.types.Operator, ImportHelper)
                 obj.modifiers['KIRI_3DGS_Render_GN']['Socket_61'] = bpy.data.materials['KIRI_3DGS_Render_Material']
                 
                 obj.name = f"3DGS_{image_path.stem}"
-                
-                self.report({'INFO'}, f"Successfully generated and imported Gaussian Splatting: {obj.name}")
+
+                # Create camera if enabled
+                created_camera = None
+                settings = context.scene.easyenv_generation_settings
+                if settings.create_camera:
+                    try:
+                        camera_name = f"Camera_{image_path.stem}"
+
+                        # If no camera metadata from PLY, create fallback from input image
+                        if camera_metadata is None:
+                            # Get image dimensions using Blender's image loader
+                            temp_img = bpy.data.images.load(str(image_path), check_existing=False)
+                            img_width, img_height = temp_img.size
+                            bpy.data.images.remove(temp_img)
+
+                            # Use default 30mm focal length (same as ml-sharp default)
+                            # Convert to pixels: f_px = f_mm * diagonal_px / 43.27
+                            import math
+                            diagonal_px = math.sqrt(img_width ** 2 + img_height ** 2)
+                            default_focal_mm = 30.0
+                            focal_length_px = default_focal_mm * diagonal_px / 43.27
+
+                            camera_metadata = {
+                                'focal_length_px': focal_length_px,
+                                'width': img_width,
+                                'height': img_height,
+                                'cx': img_width / 2.0,
+                                'cy': img_height / 2.0
+                            }
+                            self.report({'INFO'}, f"Using default camera (30mm focal length)")
+
+                        created_camera = create_camera_from_metadata(
+                            camera_metadata,
+                            name=camera_name,
+                            set_render_resolution=settings.set_render_resolution
+                        )
+                        self.report({'INFO'}, f"Created camera: {created_camera.name} "
+                                    f"(focal length: {created_camera.data.lens:.1f}mm)")
+                    except Exception as e:
+                        self.report({'WARNING'}, f"Failed to create camera: {str(e)}")
+
+                success_msg = f"Successfully generated and imported Gaussian Splatting: {obj.name}"
+                if created_camera:
+                    success_msg += f" with camera {created_camera.name}"
+                self.report({'INFO'}, success_msg)
                 return {'FINISHED'}
             else:
                 self.report({'ERROR'}, "Failed to generate PLY file")
@@ -718,6 +822,13 @@ class EASYENV_PT_Main_Panel(bpy.types.Panel):
         # Export path selection
         col = box.column(align=True)
         col.prop(context.scene.easyenv_generation_settings, 'export_path', text='Output')
+
+        # Camera options
+        col = box.column(align=True)
+        col.prop(context.scene.easyenv_generation_settings, 'create_camera', text='Create Camera')
+        sub = col.column(align=True)
+        sub.enabled = context.scene.easyenv_generation_settings.create_camera
+        sub.prop(context.scene.easyenv_generation_settings, 'set_render_resolution', text='Set Render Resolution')
 
         # Generate button
         row = box.row()
@@ -806,6 +917,16 @@ class EASYENV_GROUP_generation_settings(bpy.types.PropertyGroup):
         description="Directory to save generated PLY files. Leave empty to use default add-on output folder",
         default="",
         subtype='DIR_PATH'
+    )
+    create_camera: bpy.props.BoolProperty(
+        name="Create Camera",
+        description="Create a camera matching the original viewpoint used by ML-Sharp",
+        default=True
+    )
+    set_render_resolution: bpy.props.BoolProperty(
+        name="Set Render Resolution",
+        description="Set the scene render resolution to match the input image size",
+        default=False
     )
 
 
