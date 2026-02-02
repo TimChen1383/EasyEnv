@@ -55,8 +55,8 @@ Video tutorial
 
 ## Input Image
 - `Supported Input Image Format` : .jpg, .png
-- `Camera Metadata(EXIF)` : If the input image includes camera metadata, the created camera in Blender will try to match it's focal length, width and height. Otherwise the it will use default focal length(35mm). Make sure to check the `Create Camera Checkbox` and `Set Render Resolution Checkbox` if you want to create the camera and set render resolution automatically when generating 3D scene
-- Some example images whith camera metadata: https://pixelpeeper.com/photos
+- `Camera Metadata(EXIF)` : If the input image includes camera metadata, the created camera in Blender will try to match it's focal length, width and height. Otherwise it will use default focal length(35mm). Make sure to check the `Create Camera Checkbox` and `Set Render Resolution Checkbox` if you want to create the camera and set render resolution automatically when generating 3D scene
+- Some example images with camera metadata: https://pixelpeeper.com/photos
 <img width="363" height="509" alt="metadata" src="https://github.com/user-attachments/assets/da6b29a9-e5c4-451f-99cb-2ca461071c23" />
 
 
