@@ -41,7 +41,7 @@ Video tutorial
 ***Generate Panel***
 
 3. `Device Mode` : Choose to generate 3D scene with GPU or CPU
-4. `Output Folder` : Choose the output folder for the generated 3D scene .ply file
+4. `Output Folder` : Choose the output folder for the generated 3D scene file(.ply)
 5. `Create Camera Checkbox` : Create the camera of original input image when generating 3D scene. `Set Render Resolution Checkbox` : Set the render resolution to match with original input image
 6. `Generate PLY Button` : Choose an input image and start generating 3D scene
 7. `Import PLY Button` : Import the existing gaussian splatting .ply file into the scene
